@@ -1,0 +1,6 @@
+# Текстовые файлы — LF в репозитории, чтобы сервер на Linux и скрипты Python
+# получали одинаковые байты; PowerShell и C# читают LF без проблем.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.svg text
