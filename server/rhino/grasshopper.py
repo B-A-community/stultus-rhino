@@ -13,7 +13,7 @@ from Grasshopper.GUI.Base import GH_SliderAccuracy
 
 PYTHON3_GUID = System.Guid('719467e6-7cf5-4848-99b0-c5dd57e5442c')
 ACTIONS = ('status', 'open', 'new', 'clear', 'list', 'find', 'add', 'slider', 'set', 'script', 'wire', 'unwire',
-           'delete', 'solve', 'read', 'save', 'load', 'zoom')
+           'delete', 'solve', 'read', 'save', 'load', 'zoom', 'preview')
 
 action = (A.get('action') or 'status').lower()
 
@@ -305,7 +305,12 @@ elif action == 'script':
         for i, spec in enumerate(inputs):
             if isinstance(spec, str):
                 spec = {'name': spec}
-            p = o.Params.Input[i] if i < o.Params.Input.Count else o.CreateParameter(GH_ParameterSide.Input, i)
+            if i < o.Params.Input.Count:
+                p = o.Params.Input[i]
+            else:
+                # CreateParameter только создаёт объект — регистрировать надо самим.
+                p = o.CreateParameter(GH_ParameterSide.Input, i)
+                o.Params.RegisterInputParam(p, i)
             p.Name = spec['name']; p.NickName = spec['name']
             acc = (spec.get('access') or 'item').lower()
             p.Access = GH_ParamAccess.list if acc == 'list' else GH_ParamAccess.tree if acc == 'tree' else GH_ParamAccess.item
@@ -316,8 +321,16 @@ elif action == 'script':
         # Первый выход «out» (stdout) оставляем, остальные пересоздаём.
         shrink(GH_ParameterSide.Output, 1)
         for i, name in enumerate(outputs):
-            p = o.Params.Output[i + 1] if i + 1 < o.Params.Output.Count else o.CreateParameter(GH_ParameterSide.Output, i + 1)
+            if i + 1 < o.Params.Output.Count:
+                p = o.Params.Output[i + 1]
+            else:
+                p = o.CreateParameter(GH_ParameterSide.Output, i + 1)
+                o.Params.RegisterOutputParam(p, i + 1)
             p.Name = name; p.NickName = name
+    try:
+        o.VariableParameterMaintenance()
+    except Exception:
+        pass
     o.Params.OnParametersChanged()
     if A.get('code') is not None:
         o.SetSource(A['code'])
@@ -426,11 +439,24 @@ elif action == 'load':
 
 elif action == 'zoom':
     d = doc_required()
-    attrs = [o.Attributes for o in d.Objects if o.Attributes is not None]
-    if attrs:
+    from System.Collections.Generic import List
+    attrs = List[Grasshopper.Kernel.IGH_Attributes]()
+    for o in d.Objects:
+        if o.Attributes is not None:
+            attrs.Add(o.Attributes)
+    if attrs.Count:
         canvas().Viewport.Focus(attrs)
     Grasshopper.Instances.RedrawCanvas()
     result = {'ok': True}
+
+elif action == 'preview':
+    # Превью канваса во вьюпорте Rhino: off | wire | shaded (перед снимком запечённой геометрии — off).
+    d = doc_required()
+    mode = (A.get('mode') or 'shaded').lower()
+    M = Grasshopper.Kernel.GH_PreviewMode
+    d.PreviewMode = M.Disabled if mode == 'off' else M.Wireframe if mode == 'wire' else M.Shaded
+    DOC.Views.Redraw()
+    result = {'ok': True, 'mode': mode}
 
 else:
     raise Exception('Неизвестное действие: %s. Есть: %s' % (action, ', '.join(ACTIONS)))

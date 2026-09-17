@@ -111,6 +111,7 @@ n = py("import rhinoscriptsyntax as rs\nresult = {l: len(rs.ObjectsByLayer(l) or
 print('  объектов в документе по слоям:', n)
 gh(action='set', id='запечь', value=False)
 gh(action='zoom')
+gh(action='preview', mode='off')   # снимки — запечённой геометрии по слоям, без красного превью GH
 for name, view in (('kafd_persp.png', 'perspective'), ('kafd_top.png', 'top'), ('kafd_front.png', 'front'), ('kafd_right.png', 'right')):
     print('  ', shot(name, view))
 # Ещё раз с другой этажностью — на снимке видно, что геометрия следует слайдеру.
@@ -119,6 +120,7 @@ gh(action='set', id='запечь', value=True); gh(action='set', id='запеч
 print('  ', shot('kafd_persp_9floors.png'))
 gh(action='set', id='этажи', value=6)
 gh(action='set', id='запечь', value=True); gh(action='set', id='запечь', value=False)
+gh(action='preview', mode='shaded')
 
 print('== сохранение')
 ghp = os.path.join(BUILD, 'kafd-metro-station.gh')

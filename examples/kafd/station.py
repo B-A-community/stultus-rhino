@@ -57,7 +57,7 @@ def section(t):
     pts = []
     n = 24
     for i in range(n + 1):
-        a = -math.pi / 2 + math.pi * i / n          # от -90° до +90°
+        a = math.pi * i / n                          # 0°..180°: от +y по гребню к -y
         # Суперэллипс в сечении: |y/hw|^p + |z/h|^p = 1, p=2.3 — «пухлые» стены.
         p = 2.3
         cy = math.copysign(abs(math.cos(a)) ** (2.0 / p), math.cos(a))
@@ -141,26 +141,54 @@ if shell is not None:
 
 # ---- плиты этажей: горизонтальные сечения оболочки, с отступом ------------
 slabs = []
+outlines = []   # (z, замкнутый контур этажа) — по ним обрезаются колонны и ядра
 slab_t = 0.4
 inset = 1.2
+def section_point(t, a):
+    """Точка сечения при параметре t вдоль длины и угле a (0..180°) — та же формула, что в section()."""
+    x = (t - 0.5) * length
+    hw, h = profile(t)
+    p = 2.3
+    cy = math.copysign(abs(math.cos(a)) ** (2.0 / p), math.cos(a))
+    cz = abs(math.sin(a)) ** (2.0 / p)
+    y = hw * cy
+    z = h * cz
+    y *= 1.0 - 0.18 * (z / max(h, 1e-6)) ** 2
+    return x, y, z
+
+
+def plan_outline(z):
+    """Замкнутый контур плана на отметке z: где оболочка выше z, ширина сечения на этой высоте."""
+    right, left = [], []
+    n = 80
+    for k in range(n + 1):
+        t = 0.02 + 0.96 * k / n
+        hw, h = profile(t)
+        if h <= z + 0.3:
+            continue
+        p = 2.3
+        # Угол, на котором сечение достигает высоты z: z = h*sin(a)^(2/p).
+        a = math.asin(min(1.0, (z / h) ** (p / 2.0)))
+        x, y, _ = section_point(t, a)
+        right.append(rg.Point3d(x, abs(y), z))
+        left.append(rg.Point3d(x, -abs(y), z))
+    if len(right) < 3:
+        return None
+    pts = right + list(reversed(left))
+    crv = rg.Curve.CreateInterpolatedCurve(pts, 3, rg.CurveKnotStyle.ChordPeriodic)
+    if crv is None or not crv.IsClosed:
+        pts.append(pts[0])
+        crv = rg.Polyline(pts).ToNurbsCurve()
+    return crv
+
+
 if shell is not None:
     for i in range(floors):
         z = i * floor_h
         plane = rg.Plane(rg.Point3d(0, 0, z + slab_t), rg.Vector3d.ZAxis)
-        contours = list(rg.Brep.CreateContourCurves(shell, plane) or [])
-        crvs = []
-        for c in contours:
-            if c.IsClosed:
-                crvs.append(c)
-            else:
-                # Оболочка без дна: контур — дуга от края до края, замыкаем хордой.
-                chord = rg.Line(c.PointAtEnd, c.PointAtStart).ToNurbsCurve()
-                joined = rg.Curve.JoinCurves([c, chord], TOL)
-                if joined and joined[0].IsClosed:
-                    crvs.append(joined[0])
-        if not crvs:
+        outer = plan_outline(z + slab_t)
+        if outer is None:
             continue
-        outer = max(crvs, key=lambda c: rg.AreaMassProperties.Compute(c).Area)
         area0 = rg.AreaMassProperties.Compute(outer).Area
         outline = outer
         for sign in (-1, 1):
@@ -180,6 +208,7 @@ if shell is not None:
             slab = planar[0]
         bb = slab.GetBoundingBox(True)
         slab.Translate(rg.Vector3d(0, 0, z - bb.Min.Z))
+        outlines.append((z, outline))
         # Атриум: центральный вырез на верхних плитах (кроме первой).
         if i > 0:
             hole_w = min(width, length) * 0.16
@@ -190,15 +219,31 @@ if shell is not None:
                 slab = diff[0]
         slabs.append(slab)
 
-# ---- ядра и колонны: до верхней плиты (высота от этажности) -----------------
+# ---- ядра и колонны: до верхней плиты, которая есть над этой точкой ---------
 top_z = (floors - 1) * floor_h + slab_t
+
+def height_at(x, y):
+    """Отметка верха самой высокой плиты, чей контур накрывает точку (x, y)."""
+    best = 0.0
+    for z, crv in outlines:
+        pl = rg.Plane(rg.Point3d(0, 0, z), rg.Vector3d.ZAxis)
+        if crv.Contains(rg.Point3d(x, y, z), pl, TOL) == rg.PointContainment.Inside:
+            best = max(best, z + slab_t)
+    return best
+
 cores = []
 for cx in (-length * 0.22, length * 0.3):
     core_pl = rg.Plane(rg.Point3d(cx, 0, 0), rg.Vector3d.ZAxis)
     r = rg.Rectangle3d(core_pl, rg.Interval(-5, 5), rg.Interval(-7, 7)).ToNurbsCurve()
-    ext = rg.Extrusion.Create(r, top_z + floor_h * 0.5, True)
+    hz = height_at(cx, 0)
+    if hz <= slab_t:
+        continue
+    ext = rg.Extrusion.Create(r, hz + floor_h * 0.4, True)
     if ext is not None:
-        cores.append(ext.ToBrep())
+        b = ext.ToBrep()
+        bb = b.GetBoundingBox(True)
+        b.Translate(rg.Vector3d(0, 0, -bb.Min.Z))
+        cores.append(b)
 
 columns = []
 col_r = 0.6
@@ -208,12 +253,11 @@ for ix in range(nx + 1):
     for iy in range(ny + 1):
         x = -length * 0.42 + length * 0.84 * ix / nx
         y = -width * 0.3 + width * 0.6 * iy / ny
-        # Колонна только внутри плана первого этажа.
-        t = (x / length) + 0.5
-        hw, _ = profile(min(0.98, max(0.02, t)))
-        if abs(y) > hw * 0.75:
+        # Колонна — до самой высокой плиты над этой точкой; вне плана — нет колонны.
+        hz = height_at(x, y)
+        if hz <= slab_t:
             continue
-        cyl = rg.Cylinder(rg.Circle(rg.Plane(rg.Point3d(x, y, 0), rg.Vector3d.ZAxis), col_r), top_z)
+        cyl = rg.Cylinder(rg.Circle(rg.Plane(rg.Point3d(x, y, 0), rg.Vector3d.ZAxis), col_r), hz)
         columns.append(cyl.ToBrep(True, True))
 
 info = 'KAFD: этажей %d × %.1f м + крыша %.1f = %.1f м; план %.0f × %.0f м; плит %d, прутьев %d, колонн %d' % (
