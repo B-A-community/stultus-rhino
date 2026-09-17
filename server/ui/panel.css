@@ -1,0 +1,47 @@
+/* Дополнения к Graphite: палитра цвета окна, копилка приёмов, кнопка «Запомнить приём».
+   Светлая тема — временные токены до дизайна от ChatGPT (заменить целиком). */
+.topbar__actions{position:relative}
+.accent{position:absolute;top:36px;right:0;z-index:30;display:flex;gap:6px;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 30px #0006}
+.accent__swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.accent__swatch[aria-pressed=true]{border-color:var(--text)}
+.accent__swatch:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.msg__actions{margin-top:8px;display:flex;gap:6px}
+.msg__remember{font-size:11px;padding:4px 9px}
+.recipes__list{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.recipe{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--raised)}
+.recipe__head{display:flex;align-items:baseline;gap:8px}
+.recipe__name{font-weight:600;flex:1}
+.recipe__meta{font:10px var(--mono);color:var(--quiet);letter-spacing:.5px}
+.recipe__desc{font-size:12px;color:var(--muted);margin:6px 0}
+.recipe__params{font-size:12px;margin:6px 0;padding-left:18px}
+.recipe details{margin-top:6px}.recipe summary{cursor:pointer;font-size:11px;color:var(--quiet)}
+.recipe pre{margin:6px 0 0;max-height:220px}
+.recipe__actions{display:flex;gap:6px;margin-top:8px}
+.recipe__actions .btn{font-size:11px;padding:4px 9px}
+.recipes__empty{color:var(--muted);font-size:12px;padding:12px 0}
+/* Светлая тема: цвета интерфейса SketchUp считаются в JS (applyScheme); здесь только то, что не выражается токенами. */
+[data-theme=light] .brand{filter:brightness(.42) saturate(.9)}
+[data-theme=light] .empty__graphic{filter:brightness(.55) saturate(.9)}
+[data-theme=light] .msg--error{background:#b4433a0c;border-color:#b4433a55;color:#9a352c}
+[data-theme=light] .tool[data-state=error]{border-color:#c9857c}
+[data-theme=light] .btn--danger{color:#a53d33;border-color:#c9857c}
+[data-theme=light] .composer__row{box-shadow:0 2px 10px #0000000e}
+/* Стрелка ↗ — символ, а не цветной эмодзи Windows. */
+.suggestion span,.btn--primary,.render__save,.card__options .btn{font-variant-emoji:text}
+.suggestion span{font-family:"Segoe UI Symbol","Segoe UI",sans-serif}
+/* Вложения: скрепка слева от поля, миниатюры над ним. Модели уходит оригинал. */
+.composer__attach{flex:none;width:26px;height:26px;color:var(--quiet)}
+.composer__attach:hover{color:var(--text)}
+.composer__attach svg{width:15px;height:15px}
+/* Строка контекста — чуть ниже и правее, скрепка занимает освободившийся левый край. */
+.composer__context{margin-left:10px;transform:translateY(2px)}
+/* Имя файла — под логотипом, с левого края. */
+.topbar__model{left:0}
+.attachments{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.attachment{position:relative;width:72px;height:72px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:var(--raised)}
+.attachment img{width:100%;height:100%;object-fit:cover;display:block}
+.attachment__remove{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:0;background:#000000aa;color:#fff;font-size:11px;line-height:18px;padding:0;cursor:pointer}
+.attachment__name{position:absolute;left:0;right:0;bottom:0;font-size:9px;padding:2px 4px;background:#000000aa;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg__images{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.msg__images img{max-width:180px;max-height:140px;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+.is-drop .composer__row{border-color:var(--accent-text)}

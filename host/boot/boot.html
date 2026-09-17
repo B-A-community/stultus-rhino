@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Stultus Rhino — подключение</title>
+<style>
+:root{color-scheme:dark;--bg:#191b1a;--surface:#212422;--line:#343934;--text:#eeeee7;--muted:#a0a79d;--accent:#d6f58a;--accent-ink:#27321b;--danger:#efaaa0;--input:#171b16;--mono:'Cascadia Mono',Consolas,monospace}
+*{box-sizing:border-box}html,body{margin:0;height:100%}body{font:14px/1.55 'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:min(440px,100%);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px}
+h1{font-size:24px;font-weight:400;letter-spacing:-.6px;margin:0 0 6px}.eyebrow{font:10px var(--mono);letter-spacing:1.5px;color:var(--muted);margin-bottom:18px}
+label{display:block;font-size:12px;color:var(--muted);margin:16px 0}input{display:block;width:100%;background:var(--input);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:11px 12px;margin-top:7px;font-size:13px}
+input:focus{outline:2px solid var(--accent);outline-offset:2px}
+.btn{border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);padding:10px 14px;border-radius:7px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;margin-top:20px}.btn:disabled{opacity:.5;cursor:default}
+p{font-size:12px;color:var(--muted);line-height:1.65}.error{color:var(--danger)}.ok{color:#aed798}.small{font-size:10px;font-family:var(--mono);margin-top:22px}
+</style></head><body>
+<div class="panel">
+  <div class="eyebrow">STULTUS RHINO · ПОДКЛЮЧЕНИЕ</div>
+  <h1>Сервер бюро</h1>
+  <p>Окно чата и инструменты живут на сервере (gateway). Укажите его адрес и пропуск — они сохранятся на этом компьютере и в файлы моделей не попадут.</p>
+  <label>Адрес сервера<input id="gateway" placeholder="http://192.168.10.94:8792" spellcheck="false" autocomplete="off"></label>
+  <label>Пропуск<input id="token" type="password" placeholder="Введите пропуск" spellcheck="false" autocomplete="off"></label>
+  <button class="btn" id="connect">Сохранить и подключиться ↗</button>
+  <p id="status"></p>
+  <p class="small" id="info"></p>
+</div>
+<script>
+(function () {
+  var pending = {}, seq = 0;
+  function host(name, payload) {
+    return new Promise(function (resolve, reject) {
+      var id = 'b' + (++seq);
+      if (!window.chrome || !window.chrome.webview) { reject(new Error('Нет моста Rhino')); return; }
+      pending[id] = resolve;
+      window.chrome.webview.postMessage(JSON.stringify({ id: id, name: name, payload: payload || {} }));
+    });
+  }
+  window.Stultus = { receive: function (m) { var r = pending[m.id]; if (r) { delete pending[m.id]; r(m.result); } }, selectionChanged: function () {}, documentChanged: function () {} };
+  var q = new URLSearchParams(location.search);
+  var status = document.getElementById('status'), info = document.getElementById('info');
+  var g = document.getElementById('gateway'), t = document.getElementById('token'), b = document.getElementById('connect');
+  if (q.get('error')) { status.textContent = q.get('error'); status.className = 'error'; }
+  info.textContent = 'Плагин ' + (q.get('host') || '?') + ' · журнал: %LOCALAPPDATA%\\StultusRhino\\host.log';
+  host('ready').then(function (r) {
+    var s = (r && r.settings) || {};
+    g.value = s.gateway || q.get('gateway') || '';
+    t.value = s.token || '';
+    (g.value ? t : g).focus();
+  }, function (e) { status.textContent = e.message; status.className = 'error'; });
+  function go() {
+    b.disabled = true; status.className = ''; status.textContent = 'Проверяю сервер…';
+    var gateway = g.value.trim();
+    host('check_gateway', { gateway: gateway }).then(function (r) {
+      if (!r || !r.ok) { status.textContent = 'Сервер не отвечает: ' + (r && r.error); status.className = 'error'; b.disabled = false; return; }
+      return host('save_settings', { settings: { gateway: r.gateway, token: t.value.trim() } }).then(function () {
+        status.textContent = 'Сервер ' + (r.version || '') + ' на связи, открываю окно…'; status.className = 'ok';
+        location.href = r.ui + '?host=' + encodeURIComponent(q.get('host') || '');
+      });
+    }).catch(function (e) { status.textContent = e.message; status.className = 'error'; b.disabled = false; });
+  }
+  b.onclick = go;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+})();
+</script>
+</body></html>

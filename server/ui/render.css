@@ -1,0 +1,22 @@
+/* Additive Graphite styles: postproduction output, no changes to the main layout. */
+.render{margin:24px 0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.render__head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.render__title{margin-right:auto;font-size:12px;font-weight:500}.render__switch{display:flex;gap:4px}.render__switch button{font-size:10px;padding:5px 9px}.render__switch button[aria-pressed=true]{border-color:var(--accent);color:var(--accent)}
+.render__image{display:block;width:100%;max-height:70vh;object-fit:contain;background:var(--bg)}
+.render__footer{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:12px 14px}.render__note{font-size:11px;color:var(--muted);flex:1;min-width:130px}.render__save{font-size:11px}.render__status{font-size:12px;color:var(--muted);padding:0 14px 12px;overflow-wrap:anywhere}.render__status:empty{display:none}
+.card--render .card__preview{max-height:260px;object-fit:contain}.card--render.is-failed{border-color:var(--danger)}.card--render.is-failed:before{content:'ВИЗУАЛИЗАЦИЯ НЕ СОЗДАНА';color:var(--danger)}
+.card--render .card__editor{display:block;width:100%;margin:0 0 12px;padding:10px 12px;resize:vertical;min-height:120px;font:inherit;line-height:1.5;color:var(--text);background:var(--raised);border:1px solid var(--line);border-radius:8px}.card--render .card__editor:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.is-zoomable{cursor:zoom-in}
+.lightbox{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;padding:16px;background:rgba(10,11,10,.92);cursor:zoom-out}.lightbox__image{max-width:100%;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.6)}.lightbox__hint{font:10px var(--mono);letter-spacing:1px;color:var(--muted)}
+.render__prompt{padding:10px 14px;border-bottom:1px solid var(--line);font-size:12px;line-height:1.5;color:var(--muted);white-space:pre-wrap;overflow-wrap:anywhere}
+/* Строка размышления модели: текст переносится, а не уезжает вбок как код. */
+.tool--thinking .tool__result{white-space:pre-wrap;font-family:var(--font);font-size:12px;line-height:1.5}
+.tool__image{display:block;max-width:100%;max-height:60vh;object-fit:contain;margin:0 0 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
+
+/* Переключатель «Большой кадр» в карточке запроса визуализации. */
+.card__option{display:flex;gap:8px;align-items:flex-start;margin:8px 0 4px;font-size:12px;line-height:1.4;color:var(--text-2);cursor:pointer}
+.card__option input{margin:2px 0 0;accent-color:var(--accent);flex:none}
+.card__option:has(input:checked){color:var(--text)}
+.card__option{flex-wrap:wrap;align-items:center}
+.card__select{font:inherit;color:var(--text);background:var(--input-bg);border:1px solid var(--line);border-radius:6px;padding:3px 6px;max-width:100%}
+.card__option-hint{flex-basis:100%;color:var(--text-2)}

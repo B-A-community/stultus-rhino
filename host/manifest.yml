@@ -1,0 +1,18 @@
+---
+name: stultus-rhino
+version: 0.1.0
+authors:
+- B&A community
+description: >
+  Stultus Rhino — чат с нейросетью (Claude Code / Codex) внутри Rhino 8.
+  Окно чата и инструменты приезжают с сервера бюро: обновляется сервер —
+  обновляется и плагин. Модель видит документ, строит и правит геометрию
+  через Python, по запросу получает снимок вьюпорта; переписка хранится в файле .3dm.
+url: https://github.com/B-A-community/stultus-rhino
+keywords:
+- stultus
+- ai
+- claude
+- codex
+- chat
+icon: icon.png

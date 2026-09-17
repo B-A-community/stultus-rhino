@@ -1,0 +1,11 @@
+/* Карточка вопросов: несколько вопросов, варианты и «свой вариант». Дополнение к Graphite. */
+.card--questions .ask__q{padding:10px 0 12px;border-top:1px solid var(--line)}
+.card--questions .ask__q:first-of-type{border-top:0;padding-top:4px}
+.card--questions .ask__title{font-size:13px;color:var(--text);margin-bottom:8px}
+.card--questions .ask__options{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.card--questions .ask__opt[aria-pressed=true]{border-color:var(--accent);color:var(--accent);background:#d6f58a14}
+.card--questions .ask__custom{display:block;width:100%;padding:8px 10px;font:inherit;font-size:12px;color:var(--text);background:var(--raised);border:1px solid var(--line);border-radius:8px}
+.card--questions .ask__custom:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card--questions .card__options.ask{display:flex;justify-content:flex-end;padding-top:12px;border-top:1px solid var(--line)}
+.card--questions.is-done .ask__opt[aria-pressed=true]{opacity:1}
+.card--questions.is-done .card__options{display:none}

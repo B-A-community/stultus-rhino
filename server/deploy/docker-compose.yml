@@ -1,0 +1,48 @@
+# Имя проекта Compose задано явно: на виртуалке живут ещё Stultus (SketchUp,
+# :8790, systemd) и Stultus Cut (Premiere, :8791). Compose из другой папки
+# deploy без имени подменял бы чужой контейнер (проверено на Complex).
+name: stultus-rhino
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      # Сборка ходит в npm через локальный прокси хоста (127.0.0.1:8888).
+      network: host
+      args:
+        HTTP_PROXY: ${BUILD_HTTP_PROXY:-}
+        HTTPS_PROXY: ${BUILD_HTTPS_PROXY:-}
+    image: stultus-rhino:latest
+    container_name: stultus-rhino
+    restart: unless-stopped
+
+    # Сеть хоста: выход в интернет на виртуалке идёт через локальный прокси
+    # (127.0.0.1), и из сети контейнера он был бы недоступен. Побочный
+    # эффект — порт слушается напрямую, раздел ports не нужен:
+    # окна ходят на http://<хост>:8792/ui/ и ws://<хост>:8792/ws
+    network_mode: host
+
+    # PLUGIN_TOKEN, вход к моделям, список моделей — см. .env.example
+    env_file:
+      - /opt/stultus-rhino/.env
+
+    volumes:
+      # Сессии Claude Agent SDK и вход (.credentials.json): без тома
+      # продолжение разговора после перезапуска невозможно.
+      - /opt/stultus-rhino/claude:/root/.claude
+      # Вход Codex (auth.json после `codex login`) и его сессии.
+      - /opt/stultus-rhino/codex:/root/.codex
+      # Рабочий каталог моделей (AGENTS.md для Codex), копилка, пакеты плагина.
+      - /opt/stultus-rhino/data:/app/data
+
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8792/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

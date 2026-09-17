@@ -1,0 +1,62 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Хост Stultus Rhino — тонкий плагин Rhino 8 (.NET 8): окно с WebView2,
+    мост к странице, исполнение Python через RhinoCode, запись Undo на ход,
+    переписка в файле модели, настройки. Всё, что меняется часто (окно,
+    скрипты инструментов, подсказка модели), приезжает с gateway.
+
+    Сборка: dotnet build -c Release  →  bin/Release/net8.0-windows/StultusRhino.rhp
+    Сборки Rhino берутся из установленного Rhino 8 (RhinoDir), в пакет не копируются.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetExt>.rhp</TargetExt>
+    <AssemblyName>StultusRhino</AssemblyName>
+    <RootNamespace>BACommunity.StultusRhino</RootNamespace>
+    <Version>0.1.0</Version>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12</LangVersion>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Company>B&amp;A community</Company>
+    <Product>Stultus Rhino</Product>
+    <Copyright>© 2026 B&amp;A community</Copyright>
+    <Description>Чат с нейросетью (Claude Code / Codex) внутри Rhino 8: окно и инструменты приезжают с сервера бюро.</Description>
+    <NoWarn>$(NoWarn);CA1416;MSB3277;NU1701</NoWarn>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin/$(Configuration)/</OutputPath>
+    <RhinoDir Condition="'$(RhinoDir)' == ''">C:\Program Files\Rhino 8\System</RhinoDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="RhinoCommon">
+      <HintPath>$(RhinoDir)\netcore\RhinoCommon.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Rhino.UI">
+      <HintPath>$(RhinoDir)\Rhino.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Eto">
+      <HintPath>$(RhinoDir)\Eto.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Rhino.Runtime.Code">
+      <HintPath>$(RhinoDir)\Rhino.Runtime.Code.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Страница-заглушка (нет адреса сервера / сервер недоступен) и иконки — рядом с .rhp. -->
+    <None Include="boot\**" CopyToOutputDirectory="PreserveNewest" LinkBase="boot" />
+    <None Include="icons\**" CopyToOutputDirectory="PreserveNewest" LinkBase="icons" />
+    <None Include="manifest.yml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

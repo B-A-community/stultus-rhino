@@ -1,0 +1,18 @@
+# Собранные пакеты не выкладываем в репозиторий
+build/
+*.yak
+
+# Хост (C#)
+host/bin/
+host/obj/
+
+# Gateway
+server/node_modules/
+server/dist/
+server/data/
+server/.env
+.env
+
+# Локальная конфигурация инструментов разработки
+.claude/
+*.log
