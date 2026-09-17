@@ -50,6 +50,7 @@
     scene_state: function (p) { return tool('scene_state', p); },
     select: function (p) { return tool('select', p); },
     screenshot: function (p) { return tool('screenshot', p); },
+    grasshopper: function (p) { return tool('grasshopper', p); },
     named_views: function (p) { return tool('named_views', p, { undo: (p.action === 'list' || p.action === 'activate') ? 'none' : 'turn', turn: p.turn, turn_label: p.turn_label, label: 'вид ' + (p.name || '') }); },
     save_attachment: function (p) { return tool('attachments', { action: 'save', name: p.name, base64: p.base64 }); },
     read_attachment: function (p) { return tool('attachments', { action: 'read', path: p.path }); },
@@ -209,6 +210,7 @@
     if (call.name === 'render_viewport') return 'Постпродакшн текущего кадра';
     if (call.name === 'ask_user') return a.question || '';
     if (call.name === 'select') return a.mode === 'clear' ? 'снять выделение' : 'выделить ' + ((a.ids || []).length) + ' объект(ов)';
+    if (call.name === 'grasshopper') return 'grasshopper: ' + (a.action || 'status') + (a.nick ? ' «' + a.nick + '»' : '') + (a.id ? ' ' + String(a.id).slice(0, 8) : '');
     if (call.name === 'named_views') return 'именованные виды: ' + (a.action || 'list') + (a.name ? ' «' + a.name + '»' : '');
     return '';
   }
@@ -782,6 +784,7 @@
         .then(function (result) { state.turnOpened = true; if (result && result.ok !== false) state.turnOps += 1; return result; });
     }
     else if (msg.name === 'named_views') run = rb('named_views', Object.assign({ turn: state.turn, turn_label: 'Stultus: ' + (state.turnLabel || '') }, msg.args || {}));
+    else if (msg.name === 'grasshopper') run = rb('grasshopper', msg.args || {});
     else if (msg.name === 'get_scene') run = rb('scene_state', { full: true });
     else if (msg.name === 'select') run = rb('select', msg.args || {});
     else if (msg.name === 'undo') run = rb('undo', { turn: state.turn });

@@ -68,9 +68,12 @@ public static class PythonRunner
             var argsJson = (args ?? new JsonObject()).ToJsonString(Json.Compact);
             var b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(argsJson));
             // Пролог — одна строка: номера строк в трассировке сдвигаются ровно на 1, это учтено ниже.
-            prologue = $"import json as __stultus_json__; __stultus_args__ = __stultus_json__.loads(__import__('base64').b64decode('{b64}').decode('utf-8'))\n";
+            // sys.stdout запоминаем: Grasshopper при решении подменяет его и не всегда
+            // возвращает наш поток — перед печатью ответа ставим свой обратно.
+            prologue = $"import json as __stultus_json__, sys as __stultus_sys__; __stultus_stdout__ = __stultus_sys__.stdout; __stultus_args__ = __stultus_json__.loads(__import__('base64').b64decode('{b64}').decode('utf-8'))\n";
             epilogue = "\n\ntry:\n    __stultus_r__ = result\nexcept NameError:\n    __stultus_r__ = None\n" +
                        "try:\n    __stultus_s__ = __stultus_json__.dumps(__stultus_r__, ensure_ascii=False, default=str)\nexcept Exception:\n    __stultus_s__ = __stultus_json__.dumps(repr(__stultus_r__))\n" +
+                       "__stultus_sys__.stdout = __stultus_stdout__\n" +
                        $"print('\\n{Sentinel}' + __stultus_s__)\n";
         }
         catch (Exception e)

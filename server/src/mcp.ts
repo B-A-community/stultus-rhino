@@ -23,7 +23,7 @@ import { VERSION } from './version.ts'
 export const MCP_SERVER_NAME = 'stultus'
 
 /** Что модель называет в описаниях — единый источник для обоих провайдеров. */
-export const TOOL_NAMES = ['execute_python', 'get_scene', 'select', 'take_screenshot', 'render_viewport', 'named_views', 'save_recipe', 'get_recipe', 'undo', 'ask_user'] as const
+export const TOOL_NAMES = ['execute_python', 'get_scene', 'select', 'take_screenshot', 'render_viewport', 'named_views', 'grasshopper', 'save_recipe', 'get_recipe', 'undo', 'ask_user'] as const
 
 function build(conn: PluginConnection): McpServer {
   const server = new McpServer({ name: MCP_SERVER_NAME, version: VERSION })
@@ -193,6 +193,48 @@ function build(conn: PluginConnection): McpServer {
     },
     async ({ action, name }) => {
       const r = await conn.callTool('named_views', { action, name })
+      return { content: [{ type: 'text', text: r.content }], isError: !r.ok }
+    },
+  )
+
+  server.registerTool(
+    'grasshopper',
+    {
+      title: 'Grasshopper',
+      description:
+        'Канвас Grasshopper (GH1) в этом Rhino: параметрические определения, которые пользователь потом крутит слайдерами. ' +
+        'Действия: status; open (запустить/показать канвас); new (новый документ); clear; list (объекты канваса: id, nick, входы/выходы, ' +
+        'провода; data:true — с данными); find (поиск компонента в библиотеке по имени → guid); add (компонент по guid или name, x, y, nick); ' +
+        'slider (nick, min, max, value, integer, x, y); set (id, value — слайдер/панель/переключатель, пересчёт); ' +
+        'script (Python 3 компонент: id? для обновления, nick, inputs [{name, access}], outputs [name], code, x, y) — ' +
+        'в коде входы доступны как переменные по именам, выходы — присваиванием переменным с именами выходов, доступны rhinoscriptsyntax/Rhino.Geometry; ' +
+        'wire (from, from_param?, to, to_param, replace?); unwire (to, to_param); delete (ids); solve; read (id, param, limit) — данные выхода ' +
+        '(геометрия как тип и габарит); save (path .gh); load (path); zoom. Главный приём для параметрики: слайдеры → Python-компонент, который ' +
+        'строит геометрию из входов; изменение слайдера пересчитывает всё. Объекты в канвасе — превью, в документ Rhino они не попадают, пока не запечены.',
+      inputSchema: {
+        action: z.enum(['status', 'open', 'new', 'clear', 'list', 'find', 'add', 'slider', 'set', 'script', 'wire', 'unwire', 'delete', 'solve', 'read', 'save', 'load', 'zoom']),
+        id: z.string().max(80).optional().describe('InstanceGuid или nick объекта'),
+        ids: z.array(z.string().max(80)).max(200).optional(),
+        name: z.string().max(120).optional().describe('Имя компонента для add'),
+        guid: z.string().max(40).optional(),
+        query: z.string().max(80).optional().describe('Поиск для find'),
+        nick: z.string().max(60).optional(),
+        x: z.number().optional(), y: z.number().optional(),
+        min: z.number().optional(), max: z.number().optional(), value: z.union([z.number(), z.string(), z.boolean()]).optional(),
+        integer: z.boolean().optional(),
+        inputs: z.array(z.union([z.string().max(40), z.object({ name: z.string().max(40), access: z.enum(['item', 'list', 'tree']).optional(), optional: z.boolean().optional(), description: z.string().max(200).optional() })])).max(30).optional(),
+        outputs: z.array(z.string().max(40)).max(30).optional(),
+        code: z.string().max(60000).optional().describe('Код Python 3 компонента'),
+        from: z.string().max(80).optional(), from_param: z.string().max(40).optional(),
+        to: z.string().max(80).optional(), to_param: z.string().max(40).optional(),
+        replace: z.boolean().optional(), solve: z.boolean().optional(),
+        param: z.string().max(40).optional(), limit: z.number().int().max(500).optional(),
+        data: z.boolean().optional(),
+        path: z.string().max(500).optional(),
+      },
+    },
+    async (args) => {
+      const r = await conn.callTool('grasshopper', args as Record<string, unknown>)
       return { content: [{ type: 'text', text: r.content }], isError: !r.ok }
     },
   )

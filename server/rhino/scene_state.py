@@ -77,6 +77,25 @@ if full:
 
     snap['camera'] = camera()
 
+    # Grasshopper: открыт ли канвас и что на нём (кратко).
+    try:
+        import Grasshopper
+        c = Grasshopper.Instances.ActiveCanvas
+        d = c.Document if c else None
+        if d is not None:
+            names = []
+            for o in list(d.Objects)[:60]:
+                item = {'nick': o.NickName, 'type': o.GetType().Name}
+                if o.GetType().Name == 'GH_NumberSlider':
+                    sl = o.__implementation__ if hasattr(o, '__implementation__') else o
+                    item['value'] = float(System.Convert.ToDouble(sl.Slider.Value))
+                names.append(item)
+            snap['grasshopper'] = {'open': True, 'objects': d.ObjectCount, 'file': d.FilePath, 'items': names}
+        else:
+            snap['grasshopper'] = {'open': c is not None, 'objects': 0}
+    except Exception:
+        snap['grasshopper'] = {'open': False}
+
     try:
         b = Rhino.Geometry.BoundingBox.Empty
         for o in visible:
