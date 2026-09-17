@@ -109,33 +109,23 @@ public sealed class ChatWindow : Form
 
     public Task<string> EvalAsync(string script) => _view.ExecuteScriptAsync(script);
 
-    /// <summary>Куда грузить страницу: gateway/ui/ или локальная страница-заглушка.</summary>
+    /// <summary>
+    /// Всегда грузим локальную страницу подключения: она сама проверяет сервер
+    /// (fetch из WebView2) и переходит на /ui/. Проверять из C# нельзя:
+    /// Rhino.exe может быть закрыт брандмауэром, а процесс WebView2 — нет.
+    /// </summary>
     public void Navigate(bool forceBoot = false)
     {
         _pageLoaded = false;
         var gateway = HostSettings.Gateway;
-        if (forceBoot || gateway.Length == 0) { LoadBoot(gateway, forceBoot ? "" : "Адрес сервера ещё не задан."); return; }
-        // Проверяем сервер в фоне: у Chromium своя страница ошибки, с неё в настройки не попасть.
-        Task.Run(() => HostUpdate.CheckGateway(gateway)).ContinueWith(t =>
-        {
-            Application.Instance.Invoke(() =>
-            {
-                var r = t.Result;
-                if (r["ok"]?.GetValue<bool>() == true)
-                {
-                    var url = r["ui"]!.ToString() + "?host=" + StultusRhinoPlugIn.HostVersion;
-                    Log.Write("окно: " + url);
-                    _view.Url = new Uri(url);
-                }
-                else LoadBoot(gateway, "Сервер недоступен: " + r["error"]);
-            });
-        });
+        LoadBoot(gateway, forceBoot ? "" : gateway.Length == 0 ? "Адрес сервера ещё не задан." : "", auto: !forceBoot && gateway.Length > 0);
     }
 
-    private void LoadBoot(string gateway, string error)
+    private void LoadBoot(string gateway, string error, bool auto = false)
     {
         var file = Path.Combine(StultusRhinoPlugIn.HomeDir, "boot", "boot.html");
-        var query = "?gateway=" + Uri.EscapeDataString(gateway) + "&error=" + Uri.EscapeDataString(error) + "&host=" + StultusRhinoPlugIn.HostVersion;
+        var query = "?gateway=" + Uri.EscapeDataString(gateway) + "&error=" + Uri.EscapeDataString(error) + "&host=" + StultusRhinoPlugIn.HostVersion + (auto ? "&auto=1" : "");
+        Log.Write("окно: boot" + (auto ? " → " + gateway : ""));
         _view.Url = new Uri(new Uri(file).AbsoluteUri + query);
     }
 

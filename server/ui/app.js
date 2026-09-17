@@ -970,9 +970,13 @@
     var b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = 'Обновить плагин';
     b.onclick = function () {
       b.disabled = true; b.textContent = 'Скачиваю и устанавливаю…';
-      rb('update_host', { url: gatewayBase() + '/download/' + encodeURIComponent(msg.package.name), version: msg.package.version }).then(function (r) {
-        b.textContent = r && r.ok !== false ? 'Установлено — перезапустите Rhino' : 'Не удалось: ' + (r && r.error);
-      }, function (e) { b.textContent = 'Не удалось: ' + e.message; b.disabled = false; });
+      // Скачивает окно (WebView2): у Rhino.exe может не быть сети (брандмауэр), у окна — есть.
+      var url = gatewayBase() + '/download/' + encodeURIComponent(msg.package.name);
+      fetch(url).then(function (resp) { if (!resp.ok) throw new Error('HTTP ' + resp.status); return resp.blob(); })
+        .then(fileToBase64)
+        .then(function (b64) { return rb('update_host', { url: url, name: msg.package.name, version: msg.package.version, base64: b64 }); })
+        .then(function (r) { b.textContent = r && r.ok !== false ? 'Установлено — перезапустите Rhino' : 'Не удалось: ' + (r && r.error); },
+              function (e) { b.textContent = 'Не удалось: ' + e.message; b.disabled = false; });
     };
     box.appendChild(b); el.appendChild(box); scrollDown();
   }

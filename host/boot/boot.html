@@ -43,18 +43,35 @@ p{font-size:12px;color:var(--muted);line-height:1.65}.error{color:var(--danger)}
     t.value = s.token || '';
     (g.value ? t : g).focus();
   }, function (e) { status.textContent = e.message; status.className = 'error'; });
-  function go() {
-    b.disabled = true; status.className = ''; status.textContent = 'Проверяю сервер…';
-    var gateway = g.value.trim();
-    host('check_gateway', { gateway: gateway }).then(function (r) {
-      if (!r || !r.ok) { status.textContent = 'Сервер не отвечает: ' + (r && r.error); status.className = 'error'; b.disabled = false; return; }
-      return host('save_settings', { settings: { gateway: r.gateway, token: t.value.trim() } }).then(function () {
-        status.textContent = 'Сервер ' + (r.version || '') + ' на связи, открываю окно…'; status.className = 'ok';
-        location.href = r.ui + '?host=' + encodeURIComponent(q.get('host') || '');
-      });
-    }).catch(function (e) { status.textContent = e.message; status.className = 'error'; b.disabled = false; });
+  // Адрес → база http://…; проверка сервера — отсюда, из WebView2 (у Rhino.exe сеть может быть закрыта брандмауэром).
+  function normalize(gateway) {
+    gateway = (gateway || '').trim().replace(/\/+$/, '');
+    if (/^wss?:\/\//i.test(gateway)) gateway = gateway.replace(/^ws/i, 'http').replace(/\/ws$/, '');
+    if (gateway && !/^https?:\/\//i.test(gateway)) gateway = 'http://' + gateway;
+    return gateway;
   }
-  b.onclick = go;
+  function check(gateway) {
+    var ctl = new AbortController(); var timer = setTimeout(function () { ctl.abort(); }, 6000);
+    return fetch(gateway + '/health', { signal: ctl.signal, cache: 'no-store' }).then(function (r) {
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    });
+  }
+  function go(auto) {
+    b.disabled = true; status.className = ''; status.textContent = 'Проверяю сервер…';
+    var gateway = normalize(g.value);
+    if (!gateway) { status.textContent = 'Укажите адрес сервера.'; status.className = 'error'; b.disabled = false; return; }
+    check(gateway).then(function (h) {
+      var save = auto ? Promise.resolve() : host('save_settings', { settings: { gateway: gateway, token: t.value.trim() } });
+      return save.then(function () {
+        status.textContent = 'Сервер ' + (h.version || '') + ' на связи, открываю окно…'; status.className = 'ok';
+        location.href = gateway + '/ui/index.html?host=' + encodeURIComponent(q.get('host') || '');
+      });
+    }).catch(function (e) { status.textContent = 'Сервер не отвечает: ' + (e.name === 'AbortError' ? 'нет ответа за 6 с' : e.message); status.className = 'error'; b.disabled = false; });
+  }
+  b.onclick = function () { go(false); };
+  if (q.get('auto') === '1' && q.get('gateway')) { g.value = q.get('gateway'); setTimeout(function () { go(true); }, 50); }
   document.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
 })();
 </script>

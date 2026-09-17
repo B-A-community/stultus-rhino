@@ -108,7 +108,7 @@ public sealed class Bridge
                     return new JsonObject { ["ok"] = true };
                 }
             case "update_host":
-                return HostUpdate.Install(Json.Str(p, "url"), Json.Str(p, "version"));
+                return HostUpdate.Install(Json.Str(p, "url"), Json.Str(p, "version"), Json.Str(p, "base64", ""), Json.Str(p, "name", ""));
             default:
                 throw new InvalidOperationException("неизвестный вызов хоста: " + name);
         }

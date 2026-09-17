@@ -218,11 +218,11 @@ elif action == 'find':
         d = p.Desc
         text = ' '.join([d.Name or '', d.NickName or '', d.Category or '', d.SubCategory or '']).lower()
         if q in text:
-            hits.append({'guid': str(p.Guid), 'name': d.Name, 'nick': d.NickName, 'category': d.Category, 'sub': d.SubCategory,
-                         'description': (d.Description or '')[:120]})
-        if len(hits) >= 40:
-            break
-    result = {'ok': True, 'hits': hits}
+            exact = (d.Name or '').lower() == q or (d.NickName or '').lower() == q
+            hits.append((0 if exact else 1, len(d.Name or ''), {'guid': str(p.Guid), 'name': d.Name, 'nick': d.NickName, 'category': d.Category,
+                         'sub': d.SubCategory, 'description': (d.Description or '')[:120]}))
+    hits.sort(key=lambda h: (h[0], h[1]))
+    result = {'ok': True, 'hits': [h[2] for h in hits[:40]], 'total': len(hits)}
 
 elif action == 'add':
     # Компонент по guid или точному имени.
@@ -382,8 +382,15 @@ elif action == 'read':
     items = []
     for x in list(vd.AllData(True))[:limit]:
         v = x.Value if hasattr(x, 'Value') else x
-        if hasattr(v, 'GetBoundingBox'):
-            b = v.GetBoundingBox(True)
+        b = None
+        try:
+            if hasattr(v, 'GetBoundingBox'):
+                b = v.GetBoundingBox(True)
+            elif hasattr(v, 'BoundingBox'):
+                b = v.BoundingBox
+        except Exception:
+            b = None
+        if b is not None and b.IsValid:
             items.append({'type': type(v).__name__, 'bbox': {'min': pt(b.Min), 'max': pt(b.Max)}})
         else:
             items.append(str(v)[:200])

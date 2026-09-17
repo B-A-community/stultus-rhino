@@ -37,7 +37,8 @@ const http = createServer(async (req: IncomingMessage, res: ServerResponse) => {
   const url = new URL(req.url ?? '/', 'http://localhost')
 
   if (url.pathname === '/' || url.pathname === '/health') {
-    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8' })
+    // CORS: страницу подключения хост грузит с file://, и она проверяет сервер отсюда.
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' })
     res.end(
       JSON.stringify({
         name: 'stultus-rhino-gateway',

@@ -20,6 +20,7 @@ namespace BACommunity.StultusRhino;
 public sealed class DevBridge : IDisposable
 {
     public const int Port = 8799;
+    private static Bridge? _fallback;
     private readonly HttpListener _listener = new();
     private bool _running;
 
@@ -74,8 +75,8 @@ public sealed class DevBridge : IDisposable
                         var p = JsonNode.Parse(body) as JsonObject ?? new JsonObject();
                         result = OnUi(() =>
                         {
-                            // Без окна — временный мост: настройки и Python работают и так.
-                            var bridge = ChatWindow.Current?.Bridge ?? new Bridge(_ => { });
+                            // Без окна — запасной мост (один на всё время: в нём живёт запись Undo хода).
+                            var bridge = ChatWindow.Current?.Bridge ?? (_fallback ??= new Bridge(_ => { }));
                             var r = bridge.Handle(Json.Str(p, "name"), p["payload"] as JsonObject ?? new JsonObject());
                             if (r is JsonObject o && o["ok"] == null) o["ok"] = true;
                             return r;

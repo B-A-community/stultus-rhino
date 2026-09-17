@@ -61,6 +61,7 @@ function sendFile(res: ServerResponse, file: string, cacheable: boolean): boolea
     'content-length': statSync(file).size,
     // Окно грузится редко, а обновления должны доходить сразу: без кэша.
     'cache-control': cacheable ? 'public, max-age=3600' : 'no-store',
+    'access-control-allow-origin': '*',
   })
   createReadStream(file).pipe(res)
   return true
