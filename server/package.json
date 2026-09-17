@@ -1,7 +1,7 @@
 {
   "name": "stultus-rhino-gateway",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Gateway для плагина Stultus Rhino: принимает окна Rhino 8 по WebSocket, раздаёт им интерфейс и Python-скрипты инструментов, отдаёт инструменты Claude Code и Codex как MCP-сервер",
   "type": "module",
   "main": "dist/index.js",

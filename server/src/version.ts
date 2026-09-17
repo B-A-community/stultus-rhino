@@ -3,10 +3,10 @@
  * Rhino (C#) обновляется редко, и gateway говорит окну, какой хост минимально
  * нужен: старее — окно предлагает обновить плагин.
  */
-export const VERSION = '0.1.0'
+export const VERSION = '0.1.1'
 
 /** Минимальная версия хоста Rhino, с которой работает это окно и эти скрипты. */
-export const HOST_MIN_VERSION = '0.1.0'
+export const HOST_MIN_VERSION = '0.1.1'
 
 /** Сравнение «a < b» для версий вида 1.2.3. */
 export function versionLess(a: string, b: string): boolean {

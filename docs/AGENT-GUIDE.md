@@ -35,6 +35,7 @@ Rhino 8 + хост (C#)  ──WebView2──  окно чата (JS с gateway:
 | `select` | `ids[]`, `mode?`, `zoom?` | `selected`, `text`, `missing_ids?` | `rhino/select.py` |
 | `take_screenshot` | `reason`, `view?`, `zoom_extents?`, `display_mode?` | текст + `image` | пользователь → `rhino/screenshot.py` |
 | `named_views` | `action`, `name?` | список/камера | `rhino/named_views.py` |
+| `grasshopper` | `action` (open, list, find, add, slider, set, script, wire, solve, read, save, load…) | объекты канваса, данные выходов, problems | `rhino/grasshopper.py` |
 | `render_viewport` | `prompt`, `size?`, `save_path?` | картинка постпродакшна | пользователь → gateway (`render.ts`, `tiles.ts`) |
 | `save_recipe` / `get_recipe` | … | копилка | gateway (`recipes.ts`) |
 | `undo` | — | `ok` | хост: закрыть запись, `_-Undo` |

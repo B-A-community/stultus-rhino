@@ -23,6 +23,10 @@ ENV HTTP_PROXY=$HTTP_PROXY HTTPS_PROXY=$HTTPS_PROXY
 WORKDIR /app
 ENV NODE_ENV=production
 
+# Корневые сертификаты: Node носит свои, а Codex (Rust) берёт системные —
+# без них «invalid peer certificate: UnknownIssuer» при каждом ходе Codex.
+RUN apt-get -o Acquire::http::Proxy="${HTTP_PROXY:-}" -o Acquire::https::Proxy="${HTTPS_PROXY:-}" update     && apt-get -o Acquire::http::Proxy="${HTTP_PROXY:-}" install -y --no-install-recommends ca-certificates     && rm -rf /var/lib/apt/lists/*
+
 # Скрипты установки не отключаем: sharp и codex тянут нативные части.
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev && npm cache clean --force

@@ -89,8 +89,16 @@ if shell is not None:
     srf = face.ToNurbsSurface()
     du, dv = srf.Domain(0), srf.Domain(1)
 
-    def sp(u, v):
+    def sp_raw(u, v):
         return srf.PointAt(du.ParameterAt(u), dv.ParameterAt(v))
+
+    # Какой параметр идёт вдоль длины (X): диагонали считаем в нормированных (u вдоль X, v по сечению).
+    dx_u = abs(sp_raw(1, 0.5).X - sp_raw(0, 0.5).X)
+    dx_v = abs(sp_raw(0.5, 1).X - sp_raw(0.5, 0).X)
+    swap = dx_v > dx_u
+
+    def sp(u, v):
+        return sp_raw(v, u) if swap else sp_raw(u, v)
 
     def polyline_on_surface(uv_pts, steps=6):
         pts = []
@@ -119,10 +127,13 @@ if shell is not None:
             rails.append(polyline_on_surface(uv1))
         if len(uv2) > 1:
             rails.append(polyline_on_surface(uv2))
-    # Кольца по высоте — на отметках этажей (структура читает этажность).
+    # Кольца по высоте — контуры оболочки на отметках этажей (структура читает этажность).
     for f_i in range(1, floors + 1):
-        v = min(0.98, f_i * floor_h / H)
-        rails.append(polyline_on_surface([(u / 40.0, v) for u in range(41)], steps=2))
+        z = f_i * floor_h
+        if z >= H:
+            break
+        for c in rg.Brep.CreateContourCurves(shell, rg.Plane(rg.Point3d(0, 0, z), rg.Vector3d.ZAxis)) or []:
+            rails.append(c)
     for c in rails:
         m = rg.Mesh.CreateFromCurvePipe(c, rod, 8, 12, rg.MeshPipeCapStyle.Flat, False)
         if m is not None:
@@ -136,23 +147,39 @@ if shell is not None:
     for i in range(floors):
         z = i * floor_h
         plane = rg.Plane(rg.Point3d(0, 0, z + slab_t), rg.Vector3d.ZAxis)
-        contours = rg.Brep.CreateContourCurves(shell, plane) if z > 0 else [rg.Curve.JoinCurves([sections[0]])[0]] if False else rg.Brep.CreateContourCurves(shell, plane)
-        crvs = [c for c in (contours or []) if c.IsClosed]
+        contours = list(rg.Brep.CreateContourCurves(shell, plane) or [])
+        crvs = []
+        for c in contours:
+            if c.IsClosed:
+                crvs.append(c)
+            else:
+                # Оболочка без дна: контур — дуга от края до края, замыкаем хордой.
+                chord = rg.Line(c.PointAtEnd, c.PointAtStart).ToNurbsCurve()
+                joined = rg.Curve.JoinCurves([c, chord], TOL)
+                if joined and joined[0].IsClosed:
+                    crvs.append(joined[0])
         if not crvs:
             continue
         outer = max(crvs, key=lambda c: rg.AreaMassProperties.Compute(c).Area)
-        off = outer.Offset(plane, -inset, TOL, rg.CurveOffsetCornerStyle.Round)
-        outline = off[0] if off and len(off) == 1 else outer
-        planar = rg.Brep.CreatePlanarBreps([outline], TOL)
-        if not planar:
-            continue
-        slab = planar[0]
-        # Толщина плиты — выдавливание вниз.
-        ext = rg.Extrusion.Create(outline, -slab_t, True)
+        area0 = rg.AreaMassProperties.Compute(outer).Area
+        outline = outer
+        for sign in (-1, 1):
+            off = outer.Offset(plane, sign * inset, TOL, rg.CurveOffsetCornerStyle.Round)
+            if off and len(off) == 1 and off[0].IsClosed and rg.AreaMassProperties.Compute(off[0]).Area < area0:
+                outline = off[0]
+                break
+        # Толщина плиты — выдавливание; направление нормали зависит от обхода, ставим по габариту.
+        slab = None
+        ext = rg.Extrusion.Create(outline, slab_t, True)
         if ext is not None:
-            b = ext.ToBrep()
-            if b is not None:
-                slab = b
+            slab = ext.ToBrep()
+        if slab is None:
+            planar = rg.Brep.CreatePlanarBreps([outline], TOL)
+            if not planar:
+                continue
+            slab = planar[0]
+        bb = slab.GetBoundingBox(True)
+        slab.Translate(rg.Vector3d(0, 0, z - bb.Min.Z))
         # Атриум: центральный вырез на верхних плитах (кроме первой).
         if i > 0:
             hole_w = min(width, length) * 0.16

@@ -63,6 +63,7 @@ screenshot, named_views, attachments, render_assets } }` — исходники 
 | `named_views` | `{ action, name? }` | `{ views[] }` / `{ activated, camera }` / `{ added }` / … |
 | `attachments` | `{ action: save\|read, name?, base64?, path? }` | `{ path, dir, bytes }` / `{ base64, bytes }` |
 | `render_assets` | `{ action: store\|chunk\|read\|export_to\|export, id, … }` | как у Stultus для SketchUp |
+| `grasshopper` | `{ action: status\|open\|new\|clear\|list\|find\|add\|slider\|set\|script\|wire\|unwire\|delete\|solve\|read\|save\|load\|zoom, … }` | по действию: объекты канваса (`id`, `nick`, входы/выходы, провода, данные), `problems` после решения, `items` с габаритами для `read` |
 
 Снимок сцены:
 
@@ -129,6 +130,7 @@ screenshot, named_views, attachments, render_assets } }` — исходники 
 | `select` | `{ ids?, mode?, zoom? }` | скрипт `select` |
 | `take_screenshot` | `{ reason, view?, zoom_extents?, display_mode? }` | **пользователь**: карточка → скрипт `screenshot` |
 | `named_views` | `{ action, name? }` | скрипт `named_views` |
+| `grasshopper` | `{ action, … }` | скрипт `grasshopper` |
 | `render_viewport` | `{ prompt, render_id, size, sizes, save_path }` | **пользователь**: карточка → `screenshot` с `framing: 'viewport'`; далее gateway |
 | `render_export` | `{ render_id, save_path }` | скрипт `render_assets` |
 | `undo` | `{}` | хост |
@@ -139,8 +141,8 @@ screenshot, named_views, attachments, render_assets } }` — исходники 
 Как в Stultus: MCP-сервер `stultus` по адресу
 `http://127.0.0.1:<port>/mcp/<connection-id>` с bearer-пропуском, уникальным
 для соединения. Инструменты: `execute_python`, `get_scene`, `select`,
-`take_screenshot`, `render_viewport`, `named_views`, `save_recipe`,
-`get_recipe`, `undo`, `ask_user`. Каждый вызов — `tool_call` по WebSocket и
+`take_screenshot`, `render_viewport`, `named_views`, `grasshopper`,
+`save_recipe`, `get_recipe`, `undo`, `ask_user`. Каждый вызов — `tool_call` по WebSocket и
 ожидание `tool_result` (`TOOL_TIMEOUT_MS`, 10 минут); модель ждёт ответа
 инструмента до `MCP_TOOL_TIMEOUT_MS` (45 минут — большой кадр 8K).
 

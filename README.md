@@ -6,7 +6,7 @@
 снимок вьюпорта. Родной брат [Stultus](https://github.com/B-A-community/stultus)
 для SketchUp: тот же gateway, тот же дизайн окна, те же инструменты.
 
-Версия 0.1.0 · лицензия [Apache 2.0](LICENSE) · © 2026 B&A community
+Версия 0.1.1 · лицензия [Apache 2.0](LICENSE) · © 2026 B&A community
 
 Создатели: [maksarsanjeev](https://github.com/maksarsanjeev) — см. [AUTHORS](AUTHORS).
 
@@ -56,13 +56,20 @@
 - **Картинки в сообщении**: скрепка, Ctrl+V, перетаскивание; оригиналы
   ложатся в папку `<файл>-content` рядом с `.3dm`.
 
+- **Grasshopper.** Инструмент `grasshopper`: канвас, слайдеры, компоненты из
+  библиотеки, Python 3 компоненты с кодом, провода, решение, чтение выходов,
+  сохранение и загрузка `.gh`. Параметрика по правилу «слайдеры → один
+  Python-компонент, строящий геометрию»: пользователь крутит слайдер — модель
+  пересчитывается. Пример: `examples/kafd/` — станция метро KAFD (Заха Хадид)
+  с этажностью на слайдере.
+
 Инструменты модели: `execute_python`, `get_scene`, `select`,
-`take_screenshot`, `render_viewport`, `named_views`, `save_recipe`,
-`get_recipe`, `undo`, `ask_user`. Подробно — [docs/PROTOCOL.md](docs/PROTOCOL.md).
+`take_screenshot`, `render_viewport`, `named_views`, `grasshopper`,
+`save_recipe`, `get_recipe`, `undo`, `ask_user`. Подробно — [docs/PROTOCOL.md](docs/PROTOCOL.md).
 
 ## Статус
 
-Тестовая сборка 0.1.0. Проверено на живом Rhino 8.30 (Windows) и gateway:
+Тестовая сборка 0.1.1. Проверено на живом Rhino 8.30 (Windows) и gateway:
 Codex GPT-6 Astra строит куб по описанию (execute_python → select →
 get_scene), просит и получает снимок вьюпорта, продолжает сессию между
 ходами; весь ход откатывается одним Undo; переписка ложится в документ.
@@ -141,7 +148,9 @@ host/src/DevBridge.cs         мост разработки (127.0.0.1:8799), т
 host/boot/boot.html           страница-заглушка: адрес сервера и пропуск
 server/src/                   gateway: index, ui (раздача окна и скриптов), chat, mcp, connection, config, prompt, providers/
 server/ui/                    окно чата (дизайн Graphite): index.html, app.js, render.js, css
-server/rhino/                 Python-скрипты инструментов: _common, scene_state, select, screenshot, named_views, attachments, render_assets
+server/rhino/                 Python-скрипты инструментов: _common, scene_state, select, screenshot, named_views, grasshopper, attachments, render_assets
+examples/kafd/                станция KAFD: station.py (код Python-компонента), build.py (сборка через инструмент grasshopper)
+tests/live_tests.py           живой прогон: хост, скрипты, приёмы, Grasshopper, ходы модели
 server/deploy/                Dockerfile, docker-compose.yml, .env.example
 docs/                         ARCHITECTURE, PROTOCOL, DEPLOY, USER-GUIDE, AGENT-GUIDE, ROADMAP
 tests/dev.py                  прогоны на живом Rhino через мост разработки
@@ -167,6 +176,12 @@ tools/build_yak.ps1           сборка пакета; tools/dev_install.ps1 �
 - **Окно грузится с сервера**: если сервер недоступен, хост показывает
   локальную страницу с настройками. Смена адреса — переход на страницу нового
   сервера.
+- **Брандмауэр может закрывать Rhino.exe** (у нас есть правило blockRhino):
+  поэтому проверку сервера и скачивание пакета делает страница в WebView2
+  (отдельный процесс), а не C#. Gateway отдаёт `/health` и `/download` с CORS.
+- **Grasshopper при первом запуске** показывает «Getting started» и, если есть
+  сломанные плагины, «Loading Errors» — оба модальные и держат команду;
+  скрипт `grasshopper` закрывает их таймером.
 - Сборки Rhino (RhinoCommon, Eto, Rhino.Runtime.Code) берутся из
   установленного Rhino 8 (`RhinoDir` в csproj), в пакет не копируются.
 

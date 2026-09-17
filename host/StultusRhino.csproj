@@ -15,7 +15,7 @@
     <TargetExt>.rhp</TargetExt>
     <AssemblyName>StultusRhino</AssemblyName>
     <RootNamespace>BACommunity.StultusRhino</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>12</LangVersion>
