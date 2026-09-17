@@ -103,6 +103,7 @@ export async function runChat(conn: PluginConnection, msg: Extract<PluginMessage
   }
   const initialToolCalls = conn.toolCalls
   let producedOutput = false
+  let usage: import('./connection.ts').Usage | undefined
 
   /**
    * Один запуск провайдера. Возвращает, успел ли он что-то отдать: по этому
@@ -138,11 +139,18 @@ export async function runChat(conn: PluginConnection, msg: Extract<PluginMessage
           conn.send({ type: 'session', provider: msg.provider, id: piece.id })
           break
         case 'usage':
+          // Не закрываем ход здесь: Codex может прислать turn.completed, а следом
+          // ещё вызов инструмента (ask_user). «done» уйдёт, когда поток провайдера
+          // действительно кончился — иначе окно снимает «занято», человек шлёт
+          // следующее сообщение, и продолжение сессии падает.
           produced = true
-          conn.send({ type: 'done', usage: piece.usage })
-          conn.running = null
+          usage = piece.usage
           break
       }
+    }
+    if (conn.running) {
+      conn.send({ type: 'done', usage })
+      conn.running = null
     }
     return produced
   }

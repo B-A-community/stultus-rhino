@@ -421,7 +421,20 @@ def t_gh_scene():
 
 # ---------------------------------------------------------------- ходы модели через окно
 def window_ready():
+    # Чистый старт: документ в миллиметрах, переписка и сессии провайдеров — в архив
+    # (новая сессия у модели, иначе контекст прошлых ходов тянется и упирается в лимит).
+    py("""import scriptcontext as sc, Rhino
+sc.doc.AdjustModelUnitSystem(Rhino.UnitSystem.Millimeters, False)
+sc.doc.ModelAbsoluteTolerance = 0.001
+result = str(sc.doc.ModelUnitSystem)""")
+    reset_doc()
+    msg('clear_history')
     dev.call('/open', {})
+    time.sleep(2)
+    try:
+        dev.js("location.reload(); return 'reload'")
+    except Exception:
+        pass
     for _ in range(30):
         time.sleep(1)
         try:
